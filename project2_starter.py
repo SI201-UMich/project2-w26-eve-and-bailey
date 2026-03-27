@@ -50,7 +50,9 @@ def load_listing_results(html_path) -> list[tuple]:
             pattern = re.findall(r'/rooms/(?:plus/)?(\d+)', href)
             if pattern: 
                 listing_id = pattern[0]
-                listing_title = f"Listing {listing_id}"
+                title_tag = url.find_next(attrs={"data-testid": "listing-card-title"})
+                listing_title = title_tag.get_text(strip=True) if title_tag else None
+                # listing_title = f"Listing {listing_id}"
                 if not listing_title:
                     continue
                 if any(listing_id == r[1] for r in results):
