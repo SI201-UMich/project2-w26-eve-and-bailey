@@ -39,22 +39,25 @@ def load_listing_results(html_path) -> list[tuple]:
     # TODO: Implement checkout logic following the instructions
     # ==============================
     results = []
-
     with open(html_path, "r", encoding="utf-8-sig") as f:
-        soup = BeautifulSoup(f, 'html.parser')
-    
-    url_links = soup.find_all('a', href=True)
-    for url in url_links: 
-        url.get('href', None)
+        
+        soup = BeautifulSoup(f.read(), 'html.parser')
+     
+        url_links = soup.find_all('a', href=True)
+        for url in url_links: 
+            href = url.get('href', '')
 
-        pattern = re.findall(r'/rooms/(\d+)', url['href'])
-        if pattern: 
-            listing_id = pattern[0]
-            listing_title = url.get_text(strip=True)
-            if listing_title:
+            pattern = re.findall(r'/rooms/(?:plus/)?(\d+)', href)
+            if pattern: 
+                listing_id = pattern[0]
+                listing_title = f"Listing {listing_id}"
+                if not listing_title:
+                    continue
+                if any(listing_id == r[1] for r in results):
+                    continue
                 results.append((listing_title, listing_id))
-    
-    return results
+
+        return results
 
     # ==============================
     # pass
@@ -211,7 +214,10 @@ class TestCases(unittest.TestCase):
     def test_load_listing_results(self):
         # TODO: Check that the number of listings extracted is 18.
         # TODO: Check that the FIRST (title, id) tuple is  ("Loft in Mission District", "1944564").
-        pass
+        result = load_listing_results(self.search_results_path)
+        self.assertEqual(len(result), 18)
+        self.assertEqual(result[0], ("Loft in Mission District", "1944564"))
+        #pass
 
     def test_get_listing_details(self):
         html_list = ["467507", "1550913", "1944564", "4614763", "6092596"]
