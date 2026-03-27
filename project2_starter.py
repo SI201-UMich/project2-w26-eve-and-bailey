@@ -50,12 +50,12 @@ def load_listing_results(html_path) -> list[tuple]:
             pattern = re.findall(r'/rooms/(?:plus/)?(\d+)', href)
             if pattern: 
                 listing_id = pattern[0]
-                title_tag = url.find_next(attrs={"data-testid": "listing-card-title"})
+                title_tag = url.find_next("div", {"data-testid": "listing-card-title"})
                 listing_title = title_tag.get_text(strip=True) if title_tag else None
                 # listing_title = f"Listing {listing_id}"
                 if not listing_title:
                     continue
-                if any(listing_id == r[1] for r in results):
+                if listing_id in [result[1] for result in results]:
                     continue
                 results.append((listing_title, listing_id))
 
@@ -91,7 +91,61 @@ def get_listing_details(listing_id) -> dict:
     # ==============================
     # YOUR CODE STARTS HERE
     # ==============================
-    pass
+    details = {}
+    file_path = os.path.join(os.path.dirname(__file__), "html_files", f"listing_{listing_id}.html")
+    # print(file_path)
+
+    with open(file_path, "r", encoding="utf-8-sig") as f:
+        soup = BeautifulSoup(f.read(), "html.parser")
+
+    full_text = soup.get_text(" ", strip=True)
+
+    policy_number = ''
+    if 'Pending' in full_text: 
+        policy_number = 'Pending'
+    elif 'Exempt' in full_text: 
+        policy_number = 'Exempt'
+    else: 
+        policy_pattern = re.findall(r'([A-Z0-9\-]{6,})', full_text)
+        if policy_pattern:
+            policy_number = policy_pattern[0]
+        else:
+            policy_number = 'Pending'
+
+    host_type = ''
+    if 'Superhost' in full_text: 
+        host_type = 'Superhost'
+    else: 
+        host_type = 'regular'
+
+    host_name = '' 
+    name_pattern = re.findall(r'Hosted by ([A-Za-z]+(?: [A-Za-z]+)*(?: And [A-Za-z]+(?: [A-Za-z]+)*)?)', full_text)
+    if name_pattern:
+        host_name = name_pattern[0].split("Joined")[0].strip()
+
+    room_type = ''
+    if 'Private' in full_text:
+        room_type = 'Private Room'
+    elif 'Shared' in full_text:
+        room_type = 'Shared Room'
+    else:
+        room_type = 'Entire Room'
+
+    location_rating = 0.0
+    location_pattern = re.findall(r'Location\s*([0-9]\.[0-9])', full_text)
+    if location_pattern:
+        location_rating = float(location_pattern[0])
+
+    details[listing_id] = {
+        "policy_number": policy_number,
+        "host_type": host_type,
+        "host_name": host_name,
+        "room_type": room_type, 
+        "location_rating": location_rating
+        }
+
+    # print(details)
+    return details
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
@@ -225,12 +279,21 @@ class TestCases(unittest.TestCase):
         html_list = ["467507", "1550913", "1944564", "4614763", "6092596"]
 
         # TODO: Call get_listing_details() on each listing id above and save results in a list.
+        first_check = get_listing_details('467507')['467507']
+        second_check = get_listing_details('1550913')['1550913']
+        third_check = get_listing_details("1944564")['1944564']
+        fourth_check = get_listing_details('4614763')['4614763']
+        fifth_check = get_listing_details("6092596")['6092596']
 
         # TODO: Spot-check a few known values by opening the corresponding listing_<id>.html files.
         # 1) Check that listing 467507 has the correct policy number "STR-0005349".
+        self.assertEqual(first_check['policy_number'], "STR-0005349")
         # 2) Check that listing 1944564 has the correct host type "Superhost" and room type "Entire Room".
+        self.assertEqual(third_check['host_type'], 'Superhost')
+        self.assertEqual(third_check['room_type'], 'Entire Room')
         # 3) Check that listing 1944564 has the correct location rating 4.9.
-        pass
+        self.assertEqual(third_check['location_rating'], 4.9)
+        # pass
 
     def test_create_listing_database(self):
         # TODO: Check that each tuple in detailed_data has exactly 7 elements:
