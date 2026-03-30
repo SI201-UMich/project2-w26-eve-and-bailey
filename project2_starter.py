@@ -1,6 +1,6 @@
-# Your name: Eve Orban
-# Your student id: 50136872
-# Your email: eveorban@umich.edu
+# Your name: Eve Orban and Bailey Ellul
+# Your student id: 50136872 | 19398388
+# Your email: eveorban@umich.edu | bellul@umich.edu
 # Who or what you worked with on this homework (including generative AI like ChatGPT): Bailey Ellul
 # If you worked with generative AI also add a statement for how you used it.
 # e.g.:
@@ -209,7 +209,14 @@ def output_csv(data, filename) -> None:
     # ==============================
     # YOUR CODE STARTS HERE
     # ==============================
-    pass
+    sorted_data = sorted(data, key=lambda x: x[6], reverse=True)
+    with open(filename, "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            "listing_title", "listing_id", "policy_number", "host_type", "host_name", "room_type", "location_rating"   
+        ])
+    for row in sorted_data:
+        writer.writerow(row)
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
