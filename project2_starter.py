@@ -5,7 +5,7 @@
 # If you worked with generative AI also add a statement for how you used it.
 # e.g.:
 # Asked ChatGPT for hints on debugging and for suggestions on overall code structure
-#
+# Used ChatGPT to help grab listing title in load_listing_results
 # Did your use of GenAI on this assignment align with your goals and guidelines in your Gen AI contract? If not, why?
 #
 # --- ARGUMENTS & EXPECTED RETURN VALUES PROVIDED --- #
