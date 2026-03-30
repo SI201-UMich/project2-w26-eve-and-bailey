@@ -1,6 +1,6 @@
-# Your name: Eve Orban
-# Your student id: 50136872
-# Your email: eveorban@umich.edu
+# Your name: Eve Orban and Bailey Ellul
+# Your student id: 50136872 | 19398388
+# Your email: eveorban@umich.edu | bellul@umich.edu
 # Who or what you worked with on this homework (including generative AI like ChatGPT): Bailey Ellul
 # If you worked with generative AI also add a statement for how you used it.
 # e.g.:
@@ -101,16 +101,13 @@ def get_listing_details(listing_id) -> dict:
     full_text = soup.get_text(" ", strip=True)
 
     policy_number = ''
-    if 'Pending' in full_text: 
+    policy_pattern = re.findall(r'20\d{2}-00\d{4}STR|STR-000\d{4}|\d{7}', full_text)
+    if policy_pattern:
+        policy_number = policy_pattern[0]
+    elif 'Pending' in full_text:
         policy_number = 'Pending'
-    elif 'Exempt' in full_text: 
+    else:
         policy_number = 'Exempt'
-    else: 
-        policy_pattern = re.findall(r'([A-Z0-9\-]{6,})', full_text)
-        if policy_pattern:
-            policy_number = policy_pattern[0]
-        else:
-            policy_number = 'Pending'
 
     host_type = ''
     if 'Superhost' in full_text: 
@@ -209,7 +206,14 @@ def output_csv(data, filename) -> None:
     # ==============================
     # YOUR CODE STARTS HERE
     # ==============================
-    pass
+    sorted_data = sorted(data, key=lambda x: x[6], reverse=True)
+    with open(filename, "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            "listing_title", "listing_id", "policy_number", "host_type", "host_name", "room_type", "location_rating"   
+        ])
+        for row in sorted_data:
+            writer.writerow(row)
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
@@ -232,7 +236,23 @@ def avg_location_rating_by_room_type(data) -> dict:
     # ==============================
     # YOUR CODE STARTS HERE
     # ==============================
-    pass
+    totals = {}
+    counts = {}
+    for row in data: 
+        room_type = row[5]
+        rating = row[6]
+        if rating == 0.0:
+            continue
+        if room_type not in totals:
+            totals[room_type] = 0
+            counts[room_type] = 0
+        totals[room_type] += rating 
+        counts[room_type] += 1
+    
+    averages = {}
+    for room_type in totals:
+        averages[room_type] = round(totals[room_type] / counts[room_type], 2)
+    return averages
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
@@ -253,7 +273,19 @@ def validate_policy_numbers(data) -> list[str]:
     # ==============================
     # YOUR CODE STARTS HERE
     # ==============================
-    pass
+    invalid = []
+    pattern = r'^20\d{2}-00\d{4}STR$|^STR-000\d{4}$'
+    for row in data:
+    #         for row in data:
+    #             if row[2] not in ["Pending", "Exempt"]:
+    #                 print(row[1], row[2]) # Eve test to edit regex
+        listing_id = row[1]
+        policy_number = row[2]
+        if policy_number in ["Pending", "Exempt"]:
+            continue
+        if not re.match(pattern, policy_number):
+            invalid.append(listing_id)
+    return invalid
     # ==============================
     # YOUR CODE ENDS HERE
     # ==============================
@@ -331,18 +363,28 @@ class TestCases(unittest.TestCase):
         # TODO: Call output_csv() to write the detailed_data to a CSV file.
         # TODO: Read the CSV back in and store rows in a list.
         # TODO: Check that the first data row matches ["Guesthouse in San Francisco", "49591060", "STR-0000253", "Superhost", "Ingrid", "Entire Room", "5.0"].
-
+        out_path = os.path.join(self.base_dir, "test.csv")
+        output_csv(self.detailed_data, out_path)
+        rows = []
+        with open(out_path, "r", encoding="utf-8-sig") as f:
+            reader = csv.reader(f)        
+            rows = list(reader)
+        self.assertEqual(
+            rows[1],
+            ["Guesthouse in San Francisco", "49591060", "STR-0000253", "Superhost", "Ingrid", "Entire Room", "5.0"]
+        )
         os.remove(out_path)
-
     def test_avg_location_rating_by_room_type(self):
         # TODO: Call avg_location_rating_by_room_type() and save the output.
         # TODO: Check that the average for "Private Room" is 4.9.
-        pass
+        result = avg_location_rating_by_room_type(self.detailed_data)
+        self.assertEqual(result["Private Room"], 4.9)
 
     def test_validate_policy_numbers(self):
         # TODO: Call validate_policy_numbers() on detailed_data and save the result into a variable invalid_listings.
         # TODO: Check that the list contains exactly "16204265" for this dataset.
-        pass
+        invalid_listings = validate_policy_numbers(self.detailed_data)
+        self.assertEqual(invalid_listings, ["16204265"] )
 
 
 def main():
